@@ -8,3 +8,4 @@ wheels/
 
 # Virtual environments
 .venv
+aggr_max_vol.log
