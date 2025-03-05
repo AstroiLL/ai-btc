@@ -3,6 +3,16 @@ import pandas as pd
 from dbiLL.db_btc import Db, BTC
 from datetime import datetime, timedelta
 import logging
+"""
+Из файлов собранных агрегатором https://github.com/Tucsky/aggr-server
+(Агрегатор должен работать непрерывно столько времени, сколько данных вам надо собрать)
+Вытаскиваются все максимумы объемов >= moreBTC за каждый час
+И складываются в базу SQL (например sqlite или mySQL)
+Начало сбора максимумов start_date до текущего момента now_date
+В последствии эту базу можно использовать для визуализации на графиках и для использования в ML
+Для работы с SQL через SQLAlchemy используется модуль dbiLL.db_btc
+Запускать программу можно много раз, она добавляет только отсутствующие значения
+"""
 
 # Настройка логирования
 logging.basicConfig(filename='aggr_max_vol.log', level=logging.INFO,
@@ -36,12 +46,10 @@ def main():
                     fullname = os.path.join(dirs, file)
                     try:
                         df = pd.read_csv(
-                            fullname, sep=' ', names=['time', 'close', 'vol', 'dir', 'liq'], on_bad_lines='skip',
+                            fullname, sep=' ', compression='gzip', names=['time', 'close', 'vol', 'dir', 'liq'], on_bad_lines='skip',
                             dtype={'time': 'Int64', 'close': 'float64', 'vol': 'float64', 'dir': 'Int32', 'liq': 'Int32'}
                         )
-                        #Log skipped lines
-                        if df.size<len(open(fullname).readlines()):
-                            logging.warning(f'File {fullname}: Bad lines detected.')
+
                     except FileNotFoundError:
                         logging.error(f"File not found: {fullname}")
                         continue
