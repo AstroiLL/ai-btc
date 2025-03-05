@@ -75,4 +75,4 @@ The following constants in `aggr_max_vol_01.py` can be adjusted:
 
 ## License
 
-[Your License Here (e.g., MIT License)]
+[MIT License]
