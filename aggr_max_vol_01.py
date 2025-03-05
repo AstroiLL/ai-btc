@@ -22,22 +22,23 @@ logging.basicConfig(filename='aggr_max_vol.log', level=logging.INFO,
 MORE_BTC_THRESHOLD = 10
 MAXIMUM_VOLUME_THRESHOLD = 100
 DATA_PATH = '/home/astroill/BTC/aggr-server/data'
+DB_TYPE = 'sqlite'
 DB_PATH = './DB/btc.db'
 
 
-def get_start_date(db_path):
+def get_start_date(db_path, now_date):
     """
     Определяет дату начала сбора данных, основываясь на последней записи в базе данных.
 
     Args:
         db_path (str): Путь к файлу базы данных.
+        now_date (str): Текущая дата в формате 'YYYY-MM-DD'.
 
     Returns:
         str: Дата начала в формате 'YYYY-MM-DD'.
     """
-    db = Db('sqlite', db_path)
-    default_start_date = datetime.now().strftime("%Y-%m-%d")
-
+    db = Db(DB_TYPE, db_path)
+    
     with db.open() as session:
         try:
             last_record = session.query(BTC).order_by(BTC.time.desc()).first()
@@ -47,10 +48,10 @@ def get_start_date(db_path):
                 return start_date
             else:
                 logging.info("No records found in DB, using default start date.")
-                return default_start_date  # Default start date if the database is empty
+                return now_date  # Default start date if the database is empty
         except Exception as e:
             logging.exception(f"Error getting last record from DB, using default start date: {e}")
-            return default_start_date
+            return now_date
 
 def main():
     """
@@ -58,11 +59,11 @@ def main():
     информацию о всплесках объема BTC в базу данных.
     """
     now_date = datetime.now().strftime("%Y-%m-%d")
-    start_date = get_start_date(DB_PATH)
+    start_date = get_start_date(DB_PATH, now_date)
     
     print('Start:', start_date)    
     print("Now:", now_date)
-    db = Db('sqlite', DB_PATH)
+    db = Db(DB_TYPE, DB_PATH)
     with db.open() as session:
         for dirs, folder, files in os.walk(DATA_PATH):
             for file in files:
