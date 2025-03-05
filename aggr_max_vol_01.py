@@ -18,12 +18,39 @@ import logging
 logging.basicConfig(filename='aggr_max_vol.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Константы
+# Constants
 MORE_BTC_THRESHOLD = 10
-MAXIMUM_VOLUME_THRESHOLD = 500
+MAXIMUM_VOLUME_THRESHOLD = 100
 DATA_PATH = '/home/astroill/BTC/aggr-server/data'
-START_DATE = '2025-03-04'
+DB_PATH = './DB/btc.db'
 
+
+def get_start_date(db_path):
+    """
+    Определяет дату начала сбора данных, основываясь на последней записи в базе данных.
+
+    Args:
+        db_path (str): Путь к файлу базы данных.
+
+    Returns:
+        str: Дата начала в формате 'YYYY-MM-DD'.
+    """
+    db = Db('sqlite', db_path)
+    default_start_date = datetime.now().strftime("%Y-%m-%d")
+
+    with db.open() as session:
+        try:
+            last_record = session.query(BTC).order_by(BTC.time.desc()).first()
+            if last_record:
+                start_date = (last_record.time - timedelta(minutes=1)).strftime("%Y-%m-%d")                
+                logging.info(f"Found last record in DB, start date set to: {start_date}")
+                return start_date
+            else:
+                logging.info("No records found in DB, using default start date.")
+                return default_start_date  # Default start date if the database is empty
+        except Exception as e:
+            logging.exception(f"Error getting last record from DB, using default start date: {e}")
+            return default_start_date
 
 def main():
     """
@@ -31,16 +58,17 @@ def main():
     информацию о всплесках объема BTC в базу данных.
     """
     now_date = datetime.now().strftime("%Y-%m-%d")
-    print('Start:', START_DATE)
+    start_date = get_start_date(DB_PATH)
+    
+    print('Start:', start_date)    
     print("Now:", now_date)
-    # База данных для занесения всплесков
-    db = Db('sqlite', './DB/btc.db')
+    db = Db('sqlite', DB_PATH)
     with db.open() as session:
         for dirs, folder, files in os.walk(DATA_PATH):
             for file in files:
                 fname, ext = os.path.splitext(file)
                 date = fname[:10]
-                if ext == '.gz' and date >= START_DATE:
+                if ext == '.gz' and date >= start_date:
                     dir1, folder2 = os.path.split(dirs)
                     _, folder1 = os.path.split(dir1)
                     fullname = os.path.join(dirs, file)
