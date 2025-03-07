@@ -110,7 +110,9 @@ def main():
                     for i in range(len(df1m)):
                         btc0 = BTC(df1m.iloc[i, :])
                         if btc0.vol >= MAXIMUM_VOLUME_THRESHOLD:
-                            vol_spikes.append(f'{folder1}/{folder2}\t\t{btc0.time}\t{btc0.close}\t{btc0.vol}')
+                            time_str = btc0.time.strftime('%Y-%m-%d %H:%M:%S')
+                            folders = f'{folder1}/{folder2}'
+                            vol_spikes.append(f'{folders:<25} - {time_str} - {btc0.close} - {btc0.vol}')
                         if not session.query(BTC).filter(BTC.time == btc0.time).first():
                             btc_to_add.append(btc0)
                     session.add_all(btc_to_add)
